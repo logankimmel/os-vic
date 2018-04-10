@@ -40,7 +40,10 @@ sed -i '/registry_storage_provider_config =/c\registry_storage_provider_config =
 ./install.sh --with-notary --with-clair
 
 # Run admiral (set the restart to always so this comes up on restart)
-docker run -d -p 8282:8282 --name admiral -v admiral:/var/admiral --network harbor_harbor --network bridge --restart always --log-driver=json-file --log-opt max-size=1g --log-opt max-file=2 vmware/admiral:v1.3.0
+docker run -d -p 8282:8282 --name admiral \
+  -v admiral:/var/admiral --network harbor_harbor --network bridge \
+  --restart always --log-driver=json-file --log-opt max-size=1g --log-opt max-file=2 \
+  vmware/admiral:v1.3.0
 
 #Set up harbor as service
 echo '#!/bin/bash

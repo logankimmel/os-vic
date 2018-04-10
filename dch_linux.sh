@@ -7,3 +7,4 @@ systemctl start docker
 systemctl enable docker
 #Open firewall for API access
 iptables -A INPUT -p tcp --dport 2375 -j ACCEPT
+iptables-save > /etc/systemd/scripts/ip4save
