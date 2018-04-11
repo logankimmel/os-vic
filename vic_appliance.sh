@@ -8,6 +8,7 @@ systemctl enable docker
 
 # Admiral persistent store
 docker volume create admiral
+mkdir /data/admiral
 
 # Install docker-compose (required to run Harbor)
 curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
@@ -39,10 +40,21 @@ sed -i '/registry_storage_provider_config =/c\registry_storage_provider_config =
 # Install harbor (this runs a python script to fill out templates and the docker-compose up on all of the container components)
 ./install.sh --with-notary --with-clair
 
+echo '{
+  "users": [{
+    "email": "administrator@vsphere.local",
+    "password": "VMware1!",
+    "roles": "administrator"
+  }
+  ]
+}' > /data/admiral/local-users.json
+
 # Run admiral (set the restart to always so this comes up on restart)
 docker run -d -p 8282:8282 --name admiral \
   -v admiral:/var/admiral --network harbor_harbor --network bridge \
   --restart always --log-driver=json-file --log-opt max-size=1g --log-opt max-file=2 \
+  -v /data/admiral/local-users.json:/data/local-users.json \
+  -e XENON_OPTS="--localUsers=/data/local-users.json" \
   vmware/admiral:v1.3.0
 
 #Set up harbor as service
