@@ -16,7 +16,7 @@ sed -i '/ExecStart=/c\ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H unix:/
 if [ ${ENDPOINT+x} ]; then
   mkdir /etc/docker
   echo "{
-    \"insecure-registries\" : [ \"${ENDPOINT}\" ]
+    \"insecure-registries\" : [ \"${ENDPOINT}:443\", \"${ENDPOINT}\" ]
 }" > /etc/docker/daemon.json && chmod 0644 /etc/docker/daemon.json
 fi
 
@@ -75,7 +75,7 @@ else:
                     \"customProperties\": {
                         \"__containerHostType\": \"DOCKER\",
                         \"__adapterDockerType\": \"API\",
-                        \"__hostAlias\": \"docker-machine\"
+                        \"__hostAlias\": \"`hostname`\"
                     }
                 },
                 \"acceptCertificate\": \"false\"
