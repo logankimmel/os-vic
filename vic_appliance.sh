@@ -3,11 +3,11 @@
 if [ $# -eq 0 ]
   then
     echo "No Admiral admin creds supplied, using the default"
-    HARBORADMIN="administrator@vsphere.local"
-    HARBORPASS="VMware1!"
+    ADMIRALADMIN="administrator@vsphere.local"
+    ADMIRALPASS="VMware1!"
   else
-    HARBORADMIN=$1
-    HARBORPASS=$2
+    ADMIRALADMIN=$1
+    ADMIRALPASS=$2
 fi
 
 # Data directory for the docker volumes
@@ -54,8 +54,8 @@ sed -i "/container_name: nginx/c\    container_name: harbor-`hostname`" docker-c
 
 echo "{
   \"users\": [{
-    \"email\": \"${HARBORADMIN}\",
-    \"password\": \"${HARBORPASS}\",
+    \"email\": \"${ADMIRALADMIN}\",
+    \"password\": \"${ADMIRALPASS}\",
     \"roles\": \"administrator\"
   }
   ]

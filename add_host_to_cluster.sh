@@ -34,7 +34,7 @@ curl --request POST \
   },
   "acceptCertificate": false
 }'
-# } else add new host to existing cluster {
+# else add new host to existing cluster {
 
 curl --request POST \
   --url http://192.168.85.148:8282/resources/clusters/8028af74d0bf2a7556993dfa2e950/hosts \
