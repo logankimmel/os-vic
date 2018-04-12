@@ -25,7 +25,7 @@ curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compos
 #Download the Harbor release
 curl -O https://storage.googleapis.com/harbor-releases/release-1.4.0/harbor-online-installer-v1.4.0.tgz
 # Python2 required for harbor configuration
-tdnf install -y tar python2
+tdnf install -y tar python2 python-setuptools
 tar xvf harbor-online-installer-v1.4.0.tgz
 cd harbor
 
@@ -87,3 +87,46 @@ ExecStart=/usr/local/bin/harbor.sh
 [Install]
 WantedBy=multi-user.target' > /etc/systemd/system/harbor.service
 systemctl enable harbor.service
+
+easy_install -U requests
+# Create python file to automate the automation of adding harbor registry to admiral
+
+sleep 20
+echo "#!/usr/bin/python
+import requests
+data = '{\"requestType\":\"LOGIN\"}'
+print 'Authenticating to the Admiral endpoint'
+response = requests.post('http://127.0.0.1:8282/core/authn/basic', auth=('${ADMIRALADMIN}', '${ADMIRALPASS}'), data=data)
+response.raise_for_status()
+auth = response.headers['x-xenon-auth-token']
+headers = {'x-xenon-auth-token': auth}
+cert = open('/data/cert/harbor-photon-machine.local.crt', 'r').read()
+c = {'certificate': cert}
+print 'Adding Harbor certificate'
+response = requests.post('http://127.0.0.1:8282/config/trust-certs', json=c, headers=headers)
+response.raise_for_status()
+c = {
+  'type': 'Password',
+  'userEmail': 'admin',
+  'privateKey': 'Harbor12345',
+  'customProperties': {
+    '__authCredentialsName': 'HarborAdmin'
+  }
+}
+print 'Adding Harbor login credentials'
+response = requests.post('http://127.0.0.1:8282/core/auth/credentials', json=c, headers=headers)
+response.raise_for_status()
+o = response.json()['documentSelfLink']
+c = {
+  'hostState': {
+    'address': 'https://harbor-photon-machine.local:443',
+    'name': 'Harbor',
+    'endpointType': 'container.docker.registry',
+    'authCredentialsLink': o
+  }
+}
+print 'Adding Harbor registry to Admiral'
+response = requests.put('http://127.0.0.1:8282/config/registry-spec', json=c, headers=headers)
+response.raise_for_status()" >> /tmp/add_registry
+chmod +x /tmp/add_registry
+/tmp/add_registry
