@@ -11,6 +11,15 @@ fi
 
 # Listen on external port
 sed -i '/ExecStart=/c\ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock' /lib/systemd/system/docker.service
+
+# Add Harbor registry (insecure due to self-signed cert)
+if [ ${ENDPOINT+x} ]; then
+  mkdir /etc/docker
+  echo "{
+    \"insecure-registries\" : [ \"${ENDPOINT}\" ]
+}" > /etc/docker/daemon.json && chmod 0644 /etc/docker/daemon.json
+fi
+
 systemctl start docker
 systemctl enable docker
 #Open firewall for API access
