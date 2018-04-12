@@ -1,5 +1,14 @@
 #!/bin/bash -e
 #VIC Build
+if [ $# -eq 0 ]
+  then
+    echo "No Admiral admin creds supplied, using the default"
+    HARBORADMIN="administrator@vsphere.local"
+    HARBORPASS="VMware1!"
+  else
+    HARBORADMIN=$1
+    HARBORPASS=$2
+fi
 
 # Data directory for the docker volumes
 mkdir /data
@@ -43,14 +52,14 @@ sed -i "/container_name: nginx/c\    container_name: harbor-`hostname`" docker-c
 # Install harbor (this runs a python script to fill out templates and the docker-compose up on all of the container components)
 ./install.sh --with-notary --with-clair
 
-echo '{
-  "users": [{
-    "email": "administrator@vsphere.local",
-    "password": "VMware1!",
-    "roles": "administrator"
+echo "{
+  \"users\": [{
+    \"email\": \"${HARBORADMIN}\",
+    \"password\": \"${HARBORPASS}\",
+    \"roles\": \"administrator\"
   }
   ]
-}' > /data/admiral/local-users.json
+}" > /data/admiral/local-users.json
 
 chmod 0644 /data/admiral/local-users.json
 
