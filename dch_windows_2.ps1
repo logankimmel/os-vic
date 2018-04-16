@@ -1,4 +1,5 @@
 # This configures the docker engine
+$ErrorActionPreference = "Stop"
 
 # Add Docker to the path for the current session.
 $env:path += ";$env:ProgramFiles\docker"
@@ -63,4 +64,26 @@ If ($res.documentLinks.Length -eq 0) {
   $url = "http://" + $endpoint + ":8282/resources/clusters"
   $res = Invoke-RestMethod -Method Post -Uri $url -ContentType "application/json" -Body $Data -Headers $headers
   echo "Successfully added new Docker host to Admiral cluster"
+} Else {
+  echo "Adding host to existing Default Cluster"
+  foreach ($documentLink in $res.documentLinks) {
+    if ($res.documents.$documentLink.Name -eq "Default") {
+      $data = @{
+        hostState = @{
+          address = "http://" + $addr + ":2375"
+          customProperties = @{
+            __containerHostType = "DOCKER"
+            __adapterDockerType = "API"
+            __hostAlias = hostname
+          }
+        }
+        acceptCertificate = "false"
+      } | ConvertTo-Json
+      $url = "http://" + $endpoint + ":8282" + $documentLink + "/hosts"
+      $res = Invoke-RestMethod -Method POST -Uri $url -ContentType "application/json" -Body $data -Headers $Headers
+      echo "Successfully added Host to existing default cluster in default project"
+      break
+    }
+  }
 }
+exit 0
