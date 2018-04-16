@@ -16,10 +16,7 @@ dockerd -H tcp://0.0.0.0:2375 --register-service
 
 # Open the firewall for the docker API
 New-NetFirewallRule -DisplayName 'Docker Inbound' -Profile @('Domain', 'Public', 'Private') -Direction Inbound -Action Allow -Protocol TCP -LocalPort 2375
-# Start the Docker service.
-Start-Service docker
 
-# Register the docker host to the Admiral endpoint
 If ($args.Length -eq 0) {
     echo "No Admiral enpoint supplied. Will function as standalone Docker Host"
     exit
@@ -27,7 +24,15 @@ If ($args.Length -eq 0) {
     $endpoint=$args[0]
     $admiralAdmin=$args[1]
     $admiralPass=$args[2]
+    mkdir C:\ProgramData\docker\config
+    echo "{`"insecure-registries`" : [`"$endpoint`:443`", `"$endpoint`"] }" | Out-File C:\ProgramData\docker\config\daemon.json -Encoding ascii
+
 }
+
+# Start the Docker service.
+Start-Service docker
+
+# Register the docker host to the Admiral endpoint
 
 $url = "http://" + $endpoint + ":8282/core/authn/basic"
 $Data = @{
