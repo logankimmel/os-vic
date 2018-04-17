@@ -51,7 +51,13 @@ response.raise_for_status()
 auth = response.headers['x-xenon-auth-token']
 headers = {'x-xenon-auth-token': auth, 'x-project' : '/projects/default-project'}
 response = requests.get('http://${ENDPOINT}:8282/resources/clusters?%24limit=50&expand=true&documentType=true&%24count=true', headers=headers)
-if len(response.json()['documentLinks']) == 0:
+clusterLinux = ''
+documents = response.json()['documents']
+for doc in documents:
+    if documents[doc]['name'] == 'Default-Linux':
+        clusterLinux = doc
+        break
+if clusterLinux == '':
     print 'No current clusters adding host to Default new cluster'
     data = {
         \"hostState\": {
@@ -59,7 +65,7 @@ if len(response.json()['documentLinks']) == 0:
             \"customProperties\": {
             \"__containerHostType\": \"DOCKER\",
             \"__adapterDockerType\": \"API\",
-            \"__clusterName\": \"Default\"
+            \"__clusterName\": \"Default-Linux\"
             }
         },
         \"acceptCertificate\": \"false\"
@@ -69,24 +75,20 @@ if len(response.json()['documentLinks']) == 0:
     print 'Successfully added Host to new Cluster for default project'
 else:
     print 'Adding host to existing default cluster'
-    documents = response.json()['documents']
-    for doc in documents:
-        if documents[doc]['name'] == 'Default':
-            data = {
-                \"hostState\": {
-                    \"address\": \"http://${ADDR}:2375\",
-                    \"customProperties\": {
-                        \"__containerHostType\": \"DOCKER\",
-                        \"__adapterDockerType\": \"API\",
-                        \"__hostAlias\": \"`hostname`\"
-                    }
-                },
-                \"acceptCertificate\": \"false\"
+    data = {
+        \"hostState\": {
+            \"address\": \"http://${ADDR}:2375\",
+            \"customProperties\": {
+                \"__containerHostType\": \"DOCKER\",
+                \"__adapterDockerType\": \"API\",
+                \"__hostAlias\": \"`hostname`\"
             }
-            response = requests.post('http://${ENDPOINT}:8282' + doc + '/hosts', json=data, headers=headers)
-            response.raise_for_status()
-            print 'Successfully added Host to existing default cluster in default project'
-            break
+        },
+        \"acceptCertificate\": \"false\"
+    }
+    response = requests.post('http://${ENDPOINT}:8282' + clusterLinux + '/hosts', json=data, headers=headers)
+    response.raise_for_status()
+    print 'Successfully added Host to existing default cluster in default project'
 exit()" > /tmp/add_host_to_admiral
 chmod +x /tmp/add_host_to_admiral
 /tmp/add_host_to_admiral

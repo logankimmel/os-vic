@@ -56,8 +56,14 @@ $addr = $ip.IPv4Address
 echo "Getting current clusters"
 $url = "http://$endpoint`:8282/resources/clusters?%24limit=50&expand=true&documentType=true&%24count=true"
 $res = Invoke-RestMethod -Method Get -Uri $url -ContentType "application/json" -Headers $headers
-
-If ($res.documentLinks.Length -eq 0) {
+$winCluster = ""
+foreach ($documentLink in $res.documentLinks) {
+  if ($res.documents.$documentLink.Name -eq "Default-Windows") {
+    $winCluster = $documentLink
+    break
+  }
+}
+If ($winCluster -eq "") {
   echo "No current clusters, adding host to Default Cluster"
   $data = @{
     hostState = @{
@@ -65,7 +71,7 @@ If ($res.documentLinks.Length -eq 0) {
       customProperties = @{
         __containerHostType = "DOCKER"
         __adapterDockerType = "API" #TODO Investigate this (maybe there's a better adapter for win)
-        __clusterName = "Default"
+        __clusterName = "Default-Windows"
       }
     }
     acceptCertificate = "false"
@@ -75,24 +81,19 @@ If ($res.documentLinks.Length -eq 0) {
   echo "Successfully added new Docker host to Admiral cluster"
 } Else {
   echo "Adding host to existing Default Cluster"
-  foreach ($documentLink in $res.documentLinks) {
-    if ($res.documents.$documentLink.Name -eq "Default") {
-      $data = @{
-        hostState = @{
-          address = "http://" + $addr + ":2375"
-          customProperties = @{
-            __containerHostType = "DOCKER"
-            __adapterDockerType = "API" #TODO: see above
-            __hostAlias = hostname
-          }
-        }
-        acceptCertificate = "false"
-      } | ConvertTo-Json
-      $url = "http://" + $endpoint + ":8282" + $documentLink + "/hosts"
-      $res = Invoke-RestMethod -Method POST -Uri $url -ContentType "application/json" -Body $data -Headers $Headers
-      echo "Successfully added Host to existing default cluster in default project"
-      break
+  $data = @{
+    hostState = @{
+      address = "http://" + $addr + ":2375"
+      customProperties = @{
+        __containerHostType = "DOCKER"
+        __adapterDockerType = "API" #TODO: see above
+        __hostAlias = hostname
+      }
     }
-  }
+    acceptCertificate = "false"
+  } | ConvertTo-Json
+  $url = "http://" + $endpoint + ":8282" + $winCluster + "/hosts"
+  $res = Invoke-RestMethod -Method POST -Uri $url -ContentType "application/json" -Body $data -Headers $Headers
+  echo "Successfully added Host to existing default cluster in default project"
 }
 exit 0
