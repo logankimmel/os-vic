@@ -45,6 +45,7 @@ sed -i '/ui_url_protocol =/c\ui_url_protocol = https' harbor.cfg
 sed -i "/ssl_cert =/c\ssl_cert = harbor-`hostname`.crt" harbor.cfg
 sed -i "/ssl_cert_key =/c\ssl_cert_key = harbor-`hostname`.key" harbor.cfg
 sed -i '/registry_storage_provider_config =/c\registry_storage_provider_config = rootdirectory:  /storage' harbor.cfg
+sed -i "/harbor_admin_password =/c\harbor_admin_password = ${ADMIRALPASS}" harbor.cfg
 
 # Change the name for the frontend harbor container
 sed -i "/container_name: nginx/c\    container_name: harbor-`hostname`" docker-compose.yml
@@ -108,7 +109,7 @@ response.raise_for_status()
 c = {
   'type': 'Password',
   'userEmail': 'admin',
-  'privateKey': 'Harbor12345',
+  'privateKey': '${ADMIRALPASS}',
   'customProperties': {
     '__authCredentialsName': 'HarborAdmin'
   }
