@@ -1,4 +1,6 @@
 # This configures the docker engine
+
+# Stop on failure
 $ErrorActionPreference = "Stop"
 
 # Add Docker to the path for the current session.
@@ -17,6 +19,7 @@ dockerd -H tcp://0.0.0.0:2375 --register-service
 # Open the firewall for the docker API
 New-NetFirewallRule -DisplayName 'Docker Inbound' -Profile @('Domain', 'Public', 'Private') -Direction Inbound -Action Allow -Protocol TCP -LocalPort 2375
 
+# Add Harbor registry (insecure due to self-signed cert)
 If ($args.Length -eq 0) {
     echo "No Admiral enpoint supplied. Will function as standalone Docker Host"
     exit
@@ -33,7 +36,6 @@ If ($args.Length -eq 0) {
 Start-Service docker
 
 # Register the docker host to the Admiral endpoint
-
 $url = "http://" + $endpoint + ":8282/core/authn/basic"
 $Data = @{
     requestType = "LOGIN"
@@ -41,6 +43,7 @@ $Data = @{
 $secpasswd = ConvertTo-SecureString $admiralPass -AsPlainText -Force
 $cred = New-Object System.Management.Automation.PSCredential ($admiralAdmin, $secpasswd)
 
+echo "Authenticating to Admiral"
 $res = Invoke-WebRequest -Method Post -Uri $url -Credential $Cred -ContentType "application/json" -Body $Data
 
 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
@@ -50,7 +53,8 @@ $headers.Add("x-project", "/projects/default-project")
 $ip = Get-NetIPAddress -InterfaceAlias 'Ethernet0' -AddressFamily IPv4
 $addr = $ip.IPv4Address
 
-$url = "http://192.168.88.128:8282/resources/clusters?%24limit=50&expand=true&documentType=true&%24count=true"
+echo "Getting current clusters"
+$url = "http://$endpoint`:8282/resources/clusters?%24limit=50&expand=true&documentType=true&%24count=true"
 $res = Invoke-RestMethod -Method Get -Uri $url -ContentType "application/json" -Headers $headers
 
 If ($res.documentLinks.Length -eq 0) {
@@ -60,7 +64,7 @@ If ($res.documentLinks.Length -eq 0) {
       address = "http://" + $addr + ":2375"
       customProperties = @{
         __containerHostType = "DOCKER"
-        __adapterDockerType = "API"
+        __adapterDockerType = "API" #TODO Investigate this (maybe there's a better adapter for win)
         __clusterName = "Default"
       }
     }
@@ -78,7 +82,7 @@ If ($res.documentLinks.Length -eq 0) {
           address = "http://" + $addr + ":2375"
           customProperties = @{
             __containerHostType = "DOCKER"
-            __adapterDockerType = "API"
+            __adapterDockerType = "API" #TODO: see above
             __hostAlias = hostname
           }
         }

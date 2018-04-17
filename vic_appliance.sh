@@ -15,10 +15,6 @@ mkdir /data
 systemctl start docker
 systemctl enable docker
 
-# Admiral persistent store
-docker volume create admiral
-mkdir /data/admiral
-
 # Install docker-compose (required to run Harbor)
 curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
 
@@ -52,6 +48,10 @@ sed -i "/container_name: nginx/c\    container_name: harbor-`hostname`" docker-c
 
 # Install harbor (this runs a python script to fill out templates and the docker-compose up on all of the container components)
 ./install.sh --with-notary --with-clair
+
+# Admiral persistent store
+docker volume create admiral
+mkdir /data/admiral
 
 echo "{
   \"users\": [{
@@ -89,9 +89,10 @@ ExecStart=/usr/local/bin/harbor.sh
 WantedBy=multi-user.target' > /etc/systemd/system/harbor.service
 systemctl enable harbor.service
 
+# Install requests for python REST calls
 easy_install -U requests
-# Create python file to automate the automation of adding harbor registry to admiral
 
+# Create python file to automate the automation of adding harbor registry to admiral
 sleep 20
 echo "#!/usr/bin/python
 import requests

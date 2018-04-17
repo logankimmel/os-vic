@@ -19,10 +19,11 @@ if [ ${ENDPOINT+x} ]; then
     \"insecure-registries\" : [ \"${ENDPOINT}:443\", \"${ENDPOINT}\" ]
 }" > /etc/docker/daemon.json && chmod 0644 /etc/docker/daemon.json
 fi
-
+# Start docker service and enable on startup
 systemctl start docker
 systemctl enable docker
-#Open firewall for API access
+
+#Open firewall for API access and save firewall rule
 iptables -A INPUT -p tcp --dport 2375 -j ACCEPT
 iptables-save > /etc/systemd/scripts/ip4save
 
@@ -34,9 +35,11 @@ fi
 
 echo "Adding DCH host to Admiral endpoint: $ENDPOINT"
 
+# Install python and tooling for python script with REST calls
 tdnf install -y python2 python-setuptools
 easy_install -U requests
 
+# Get IP address of eth0 (needed for python script)
 ADDR=$(/sbin/ifconfig eth0 | grep 'inet addr' | cut -d: -f2 | awk '{print $1}')
 
 echo "#!/usr/bin/python
