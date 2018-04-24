@@ -1,22 +1,21 @@
-#!/bin/bash
 #DCH Build
-if [ $# -eq 0 ]
+if [ -z ${VICHOSTNAME+x} ]
   then
     echo "No Admiral enpoint supplied. Will function as standalone Docker Host"
   else
-    ENDPOINT=$1
-    ADMIRALADMIN=$2
-    ADMIRALPASS=$3
+    VICHOSTNAME=$VICHOSTNAME
+    VICADMIN=$VICADMIN
+    VICPASS=$VICPASS
 fi
 
 # Listen on external port
 sed -i '/ExecStart=/c\ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock' /lib/systemd/system/docker.service
 
 # Add Harbor registry (insecure due to self-signed cert)
-if [ ${ENDPOINT+x} ]; then
+if [ ${VICHOSTNAME+x} ]; then
   mkdir /etc/docker
   echo "{
-    \"insecure-registries\" : [ \"${ENDPOINT}:443\", \"${ENDPOINT}\" ]
+    \"insecure-registries\" : [ \"${VICHOSTNAME}:443\", \"${VICHOSTNAME}\" ]
 }" > /etc/docker/daemon.json && chmod 0644 /etc/docker/daemon.json
 fi
 # Start docker service and enable on startup
@@ -27,13 +26,13 @@ systemctl enable docker
 iptables -A INPUT -p tcp --dport 2375 -j ACCEPT
 iptables-save > /etc/systemd/scripts/ip4save
 
-if [ -z ${ENDPOINT+x} ]
+if [ -z ${VICHOSTNAME+x} ]
   then
-    echo "No admiral Endpoint, all finished"
+    echo "No admiral VICHOSTNAME, all finished"
     exit 0
 fi
 
-echo "Adding DCH host to Admiral endpoint: $ENDPOINT"
+echo "Adding DCH host to Admiral VICHOSTNAME: $VICHOSTNAME"
 
 # Install python and tooling for python script with REST calls
 tdnf install -y python2 python-setuptools
@@ -45,12 +44,12 @@ ADDR=$(/sbin/ifconfig eth0 | grep 'inet addr' | cut -d: -f2 | awk '{print $1}')
 echo "#!/usr/bin/python
 import requests
 data = '{\"requestType\":\"LOGIN\"}'
-print 'Authenticating to the Admiral endpoint'
-response = requests.post('http://${ENDPOINT}:8282/core/authn/basic', auth=('${ADMIRALADMIN}', '${ADMIRALPASS}'), data=data)
+print 'Authenticating to the Admiral VICHOSTNAME'
+response = requests.post('http://${VICHOSTNAME}:8282/core/authn/basic', auth=('${VICADMIN}', '${VICPASS}'), data=data)
 response.raise_for_status()
 auth = response.headers['x-xenon-auth-token']
 headers = {'x-xenon-auth-token': auth, 'x-project' : '/projects/default-project'}
-response = requests.get('http://${ENDPOINT}:8282/resources/clusters?%24limit=50&expand=true&documentType=true&%24count=true', headers=headers)
+response = requests.get('http://${VICHOSTNAME}:8282/resources/clusters?%24limit=50&expand=true&documentType=true&%24count=true', headers=headers)
 clusterLinux = ''
 documents = response.json()['documents']
 for doc in documents:
@@ -70,7 +69,7 @@ if clusterLinux == '':
         },
         \"acceptCertificate\": \"false\"
     }
-    response = requests.post('http://${ENDPOINT}:8282/resources/clusters', json=data, headers=headers)
+    response = requests.post('http://${VICHOSTNAME}:8282/resources/clusters', json=data, headers=headers)
     response.raise_for_status()
     print 'Successfully added Host to new Cluster for default project'
 else:
@@ -86,7 +85,7 @@ else:
         },
         \"acceptCertificate\": \"false\"
     }
-    response = requests.post('http://${ENDPOINT}:8282' + clusterLinux + '/hosts', json=data, headers=headers)
+    response = requests.post('http://${VICHOSTNAME}:8282' + clusterLinux + '/hosts', json=data, headers=headers)
     response.raise_for_status()
     print 'Successfully added Host to existing default cluster in default project'
 exit()" > /tmp/add_host_to_admiral

@@ -1,13 +1,13 @@
 #!/bin/bash -e
 #VIC Build
-if [ $# -eq 0 ]
+if [ -z ${ADMIRALADMIN+x} ]
   then
     echo "No Admiral admin creds supplied, using the default"
     ADMIRALADMIN="administrator@vsphere.local"
     ADMIRALPASS="VMware1!"
   else
-    ADMIRALADMIN=$1
-    ADMIRALPASS=$2
+    ADMIRALADMIN=$ADMIRALADMIN
+    ADMIRALPASS=$ADMIRALPASS
 fi
 
 # Data directory for the docker volumes
@@ -27,24 +27,24 @@ cd harbor
 
 # Create new certificates and keys for harbor https (required)
 openssl req -newkey rsa:4096 -nodes -sha256 -keyout ca.key -x509 -days 365 -out ca.crt \
-  -subj "/C=US/ST=Texas/L=SanAntonio/O=AO/CN=harbor-`hostname`"
-openssl req -newkey rsa:4096 -nodes -sha256 -keyout harbor-`hostname`.key -out harbor-`hostname`.csr \
-   -subj "/C=US/ST=Texas/L=SanAntonio/O=AO/CN=harbor-`hostname`"
-openssl x509 -req -days 365 -in harbor-`hostname`.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out harbor-`hostname`.crt
+  -subj "/C=US/ST=Texas/L=SanAntonio/O=AO/CN=`hostname -f`"
+openssl req -newkey rsa:4096 -nodes -sha256 -keyout `hostname -f`.key -out `hostname -f`.csr \
+   -subj "/C=US/ST=Texas/L=SanAntonio/O=AO/CN=`hostname -f`"
+openssl x509 -req -days 365 -in `hostname -f`.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out `hostname -f`.crt
 mkdir /data/cert
-cp harbor-`hostname`.crt /data/cert/
-cp harbor-`hostname`.key /data/cert/
+cp `hostname -f`.crt /data/cert/
+cp `hostname -f`.key /data/cert/
 
 # Set Harbor configuration options
-sed -i "/hostname =/c\hostname = harbor-`hostname`" harbor.cfg
+sed -i "/hostname =/c\hostname = `hostname -f`" harbor.cfg
 sed -i '/ui_url_protocol =/c\ui_url_protocol = https' harbor.cfg
-sed -i "/ssl_cert =/c\ssl_cert = harbor-`hostname`.crt" harbor.cfg
-sed -i "/ssl_cert_key =/c\ssl_cert_key = harbor-`hostname`.key" harbor.cfg
+sed -i "/ssl_cert =/c\ssl_cert = `hostname -f`.crt" harbor.cfg
+sed -i "/ssl_cert_key =/c\ssl_cert_key = `hostname -f`.key" harbor.cfg
 sed -i '/registry_storage_provider_config =/c\registry_storage_provider_config = rootdirectory:  /storage' harbor.cfg
 sed -i "/harbor_admin_password =/c\harbor_admin_password = ${ADMIRALPASS}" harbor.cfg
 
 # Change the name for the frontend harbor container
-sed -i "/container_name: nginx/c\    container_name: harbor-`hostname`" docker-compose.yml
+sed -i "/container_name: nginx/c\    container_name: `hostname -f`" docker-compose.yml
 
 # Install harbor (this runs a python script to fill out templates and the docker-compose up on all of the container components)
 ./install.sh --with-notary --with-clair
@@ -102,7 +102,7 @@ response = requests.post('http://127.0.0.1:8282/core/authn/basic', auth=('${ADMI
 response.raise_for_status()
 auth = response.headers['x-xenon-auth-token']
 headers = {'x-xenon-auth-token': auth}
-cert = open('/data/cert/harbor-photon-machine.local.crt', 'r').read()
+cert = open('/data/cert/`hostname -f`.crt', 'r').read()
 c = {'certificate': cert}
 print 'Adding Harbor certificate'
 response = requests.post('http://127.0.0.1:8282/config/trust-certs', json=c, headers=headers)
@@ -121,7 +121,7 @@ response.raise_for_status()
 o = response.json()['documentSelfLink']
 c = {
   'hostState': {
-    'address': 'https://harbor-photon-machine.local:443',
+    'address': 'https://`hostname -f`:443',
     'name': 'Harbor',
     'endpointType': 'container.docker.registry',
     'authCredentialsLink': o
