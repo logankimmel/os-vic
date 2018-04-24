@@ -12,6 +12,26 @@ fi
 
 # Data directory for the docker volumes
 mkdir /data
+
+# Install DOCKER
+yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-selinux \
+                  docker-engine-selinux \
+                  docker-engine
+yum install -y yum-utils \
+                  device-mapper-persistent-data \
+                  lvm2
+yum-config-manager \
+                  --add-repo \
+                  https://download.docker.com/linux/centos/docker-ce.repo
+yum install -y docker-ce
+
 systemctl start docker
 systemctl enable docker
 
@@ -21,7 +41,7 @@ curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compos
 #Download the Harbor release
 curl -O https://storage.googleapis.com/harbor-releases/release-1.4.0/harbor-online-installer-v1.4.0.tgz
 # Python2 required for harbor configuration
-tdnf install -y tar python2 python-setuptools
+yum install -y tar python2 python-setuptools
 tar xvf harbor-online-installer-v1.4.0.tgz
 cd harbor
 
