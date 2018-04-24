@@ -1,13 +1,13 @@
 #!/bin/bash -e
 #VIC Build
-if [ -z ${ADMIRALADMIN+x} ]
+if [ -z ${VICADMIN+x} ]
   then
     echo "No Admiral admin creds supplied, using the default"
-    ADMIRALADMIN="administrator@vsphere.local"
-    ADMIRALPASS="VMware1!"
+    VICADMIN="administrator@vsphere.local"
+    VICPASS="VMware1!"
   else
-    ADMIRALADMIN=$ADMIRALADMIN
-    ADMIRALPASS=$ADMIRALPASS
+    VICADMIN=$VICADMIN
+    VICPASS=$VICPASS
 fi
 
 # Data directory for the docker volumes
@@ -41,7 +41,7 @@ sed -i '/ui_url_protocol =/c\ui_url_protocol = https' harbor.cfg
 sed -i "/ssl_cert =/c\ssl_cert = `hostname -f`.crt" harbor.cfg
 sed -i "/ssl_cert_key =/c\ssl_cert_key = `hostname -f`.key" harbor.cfg
 sed -i '/registry_storage_provider_config =/c\registry_storage_provider_config = rootdirectory:  /storage' harbor.cfg
-sed -i "/harbor_admin_password =/c\harbor_admin_password = ${ADMIRALPASS}" harbor.cfg
+sed -i "/harbor_admin_password =/c\harbor_admin_password = ${VICPASS}" harbor.cfg
 
 # Change the name for the frontend harbor container
 sed -i "/container_name: nginx/c\    container_name: `hostname -f`" docker-compose.yml
@@ -55,8 +55,8 @@ mkdir /data/admiral
 
 echo "{
   \"users\": [{
-    \"email\": \"${ADMIRALADMIN}\",
-    \"password\": \"${ADMIRALPASS}\",
+    \"email\": \"${VICADMIN}\",
+    \"password\": \"${VICPASS}\",
     \"roles\": \"administrator\"
   }
   ]
@@ -98,7 +98,7 @@ echo "#!/usr/bin/python
 import requests
 data = '{\"requestType\":\"LOGIN\"}'
 print 'Authenticating to the Admiral endpoint'
-response = requests.post('http://127.0.0.1:8282/core/authn/basic', auth=('${ADMIRALADMIN}', '${ADMIRALPASS}'), data=data)
+response = requests.post('http://127.0.0.1:8282/core/authn/basic', auth=('${VICADMIN}', '${VICPASS}'), data=data)
 response.raise_for_status()
 auth = response.headers['x-xenon-auth-token']
 headers = {'x-xenon-auth-token': auth}
@@ -110,7 +110,7 @@ response.raise_for_status()
 c = {
   'type': 'Password',
   'userEmail': 'admin',
-  'privateKey': '${ADMIRALPASS}',
+  'privateKey': '${VICPASS}',
   'customProperties': {
     '__authCredentialsName': 'HarborAdmin'
   }
