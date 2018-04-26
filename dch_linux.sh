@@ -1,5 +1,5 @@
 #DCH Build
-if [ -z ${VICHOSTNAME+x} ]
+if [ -z $VICHOSTNAME ]
   then
     echo "No Admiral enpoint supplied. Will function as standalone Docker Host"
   else
@@ -7,12 +7,32 @@ if [ -z ${VICHOSTNAME+x} ]
     VICADMIN=$VICADMIN
     VICPASS=$VICPASS
 fi
+echo "VIC HOSTNAME = ${VICHOSTNAME}."
+
+# Install DOCKER
+yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-selinux \
+                  docker-engine-selinux \
+                  docker-engine
+yum install -y yum-utils \
+                  device-mapper-persistent-data \
+                  lvm2
+yum-config-manager \
+                  --add-repo \
+                  https://download.docker.com/linux/centos/docker-ce.repo
+yum install -y docker-ce
 
 # Listen on external port
 sed -i '/ExecStart=/c\ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock' /lib/systemd/system/docker.service
 
 # Add Harbor registry (insecure due to self-signed cert)
-if [ ${VICHOSTNAME+x} ]; then
+if [ $VICHOSTNAME ]; then
   mkdir /etc/docker
   echo "{
     \"insecure-registries\" : [ \"${VICHOSTNAME}:443\", \"${VICHOSTNAME}\" ]
@@ -22,11 +42,11 @@ fi
 systemctl start docker
 systemctl enable docker
 
-#Open firewall for API access and save firewall rule
-iptables -A INPUT -p tcp --dport 2375 -j ACCEPT
-iptables-save > /etc/systemd/scripts/ip4save
+#Open firewall for API access
+firewall-cmd --add-port=2375/tcp --permanent
+firewall-cmd --reload
 
-if [ -z ${VICHOSTNAME+x} ]
+if [ -z $VICHOSTNAME ]
   then
     echo "No admiral VICHOSTNAME, all finished"
     exit 0
