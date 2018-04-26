@@ -8,6 +8,7 @@ if [ -z $VICHOSTNAME ]
     VICPASS=$VICPASS
 fi
 echo "VIC HOSTNAME = ${VICHOSTNAME}."
+echo "VIC Username = ${VICADMIN}"
 
 # Install DOCKER
 yum remove docker \
@@ -55,16 +56,16 @@ fi
 echo "Adding DCH host to Admiral VICHOSTNAME: $VICHOSTNAME"
 
 # Install python and tooling for python script with REST calls
-tdnf install -y python2 python-setuptools
+yum install -y python2 python-setuptools
 easy_install -U requests
 
 # Get IP address of eth0 (needed for python script)
-ADDR=$(/sbin/ifconfig eth0 | grep 'inet addr' | cut -d: -f2 | awk '{print $1}')
+ADDR=$(/sbin/ifconfig ens160 | grep 'inet' | cut -d: -f2 | awk '{print $2}')
 
 echo "#!/usr/bin/python
 import requests
 data = '{\"requestType\":\"LOGIN\"}'
-print 'Authenticating to the Admiral VICHOSTNAME'
+print 'Authenticating to Admiral: ${VICHOSTNAME}'
 response = requests.post('http://${VICHOSTNAME}:8282/core/authn/basic', auth=('${VICADMIN}', '${VICPASS}'), data=data)
 response.raise_for_status()
 auth = response.headers['x-xenon-auth-token']
