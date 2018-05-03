@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #VIC Build
-if [ -z ${VICADMIN+x} ]
+if [ -z $VICADMIN ]
   then
     echo "No Admiral admin creds supplied, using the default"
     VICADMIN="administrator@vsphere.local"
