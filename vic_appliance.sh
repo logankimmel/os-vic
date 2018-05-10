@@ -15,7 +15,7 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
 HNAME=$(hostname -f)
 
 # Data directory for the docker volumes
-mkdir /data
+mkdir -p /data
 
 # Install DOCKER
 yum remove docker \
@@ -57,7 +57,7 @@ openssl req -newkey rsa:4096 -nodes -sha256 -keyout ca.key -x509 -days 365 -out 
 openssl req -newkey rsa:4096 -nodes -sha256 -keyout ${HNAME}.key -out ${HNAME}.csr \
    -subj "/C=US/ST=Texas/L=SanAntonio/O=AO/CN=${HNAME}"
 openssl x509 -req -days 365 -in ${HNAME}.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out ${HNAME}.crt
-mkdir /data/cert
+mkdir -p /data/cert
 cp ${HNAME}.crt /data/cert/
 cp ${HNAME}.key /data/cert/
 
@@ -79,7 +79,7 @@ popd
 
 # Admiral persistent store
 docker volume create admiral
-mkdir /data/admiral
+mkdir -p /data/admiral
 
 echo "{
   \"users\": [{
