@@ -102,6 +102,9 @@ docker run -d -p 8282:8282 --name admiral \
 
 docker network connect harbor_harbor admiral
 
+docker run -d -p 8080:8080 --name admiral-idm --restart always --network harbor_harbor \
+  logankimmel/admiral-idm:0.4
+
 #Set up harbor as service
 echo '#!/bin/bash
 cd /opt/harbor/ && /usr/local/bin/docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml up -d' > /usr/local/bin/harbor.sh
