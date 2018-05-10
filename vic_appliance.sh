@@ -98,7 +98,7 @@ docker run -d -p 8282:8282 --name admiral \
   --restart always --log-driver=json-file --log-opt max-size=1g --log-opt max-file=2 \
   -v /data/admiral/local-users.json:/data/local-users.json \
   -e XENON_OPTS="--localUsers=/data/local-users.json" \
-  vmware/admiral:v1.3.0
+  vmware/admiral:v1.4.0
 
 docker network connect harbor_harbor admiral
 
