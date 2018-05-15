@@ -7,7 +7,7 @@ if [ -z $VICHOSTNAME ]
     VICADMIN=$VICADMIN
     VICPASS=$VICPASS
 fi
-echo "VIC HOSTNAME = ${VICHOSTNAME}."
+echo "VIC HOSTNAME = ${VICHOSTNAME}"
 echo "VIC Username = ${VICADMIN}"
 
 # Install DOCKER
@@ -60,7 +60,7 @@ yum install -y python2 python-setuptools
 easy_install -U requests
 
 # Get IP address of eth0 (needed for python script)
-ADDR=$(/sbin/ifconfig ens192 | grep 'inet' | cut -d: -f2 | awk '{print $2}')
+ADDR=$(/sbin/ifconfig eno16780032 | grep 'inet' | cut -d: -f2 | awk '{print $2}')
 
 echo "#!/usr/bin/python
 import requests
