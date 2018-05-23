@@ -6,6 +6,8 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
 # Exit if the disk doesn't exist
 if [ ! -e /dev/sdb ]; then exit 0; fi
 
+echo "Creating new disk and mounting at: ${mountpath}"
+
 # to create the partitions programatically (rather than manually)
 # we're going to simulate the manual input to fdisk
 # The sed script strips off all the comments so that we can
@@ -25,8 +27,8 @@ EOF
 
 mkfs.ext4 /dev/sdb1
 
-mkdir -p /data
+mkdir -p $mountpath
 
-mount /dev/sdb1 /data
+mount /dev/sdb1 $mountpath
 
-echo "/dev/sdb1    /data    ext4    defaults     0   0" >> /etc/fstab
+echo "${mountpath}    /data    ext4    defaults     0   0" >> /etc/fstab
