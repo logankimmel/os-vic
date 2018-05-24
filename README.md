@@ -1,5 +1,5 @@
 # Open Source VIC Appliance
-This repository contains scripts for automating the provisioning of a VM
+This repository contains scripts for automating the setup of a VM
 that contains [Admiral](https://github.com/vmware/admiral),
 [Harbor](http://vmware.github.io/harbor/), and [Admiral IDM](https://github.com/logankimmel/Admiral-IDM).
 
