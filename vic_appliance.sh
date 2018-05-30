@@ -103,7 +103,7 @@ docker run -d -p 8282:8282 --name admiral \
 docker network connect harbor_harbor admiral
 
 docker run -d -p 8080:8080 --name admiral-idm --restart always --network harbor_harbor \
-  logankimmel/admiral-idm:0.4
+  logankimmel/admiral-idm:latest
 
 #Set up harbor as service
 echo '#!/bin/bash
