@@ -1,0 +1,15 @@
+---
+version: "2"
+services:
+  elasticsearch:
+    image: "elasticsearch"
+    networks:
+    - "e_net"
+  kibana:
+    image: "kibana"
+    ports:
+    - "5601:5601/tcp"
+    networks:
+    - "e_net"
+networks:
+  e_net: {}
