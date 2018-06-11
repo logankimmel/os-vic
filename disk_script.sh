@@ -31,4 +31,4 @@ mkdir -p $mountpath
 
 mount /dev/sdb1 $mountpath
 
-echo "${mountpath}    /data    ext4    defaults     0   0" >> /etc/fstab
+echo "/dev/sdb1    ${mountpath}    ext4    defaults     0   0" >> /etc/fstab
