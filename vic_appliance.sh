@@ -71,6 +71,7 @@ sed -i "/harbor_admin_password =/c\harbor_admin_password = ${VICPASS}" harbor.cf
 
 # Change the name for the frontend harbor container
 sed -i "/container_name: nginx/c\    container_name: ${HNAME}" docker-compose.yml
+sed -i "/cpu_quota: 150000/c\    cpu_quota: 75000" docker-compose.clair.yml
 # Install harbor (this runs a python script to fill out templates and the docker-compose up on all of the container components)
 unset host
 ./install.sh --with-notary --with-clair
