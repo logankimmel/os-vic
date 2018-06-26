@@ -46,17 +46,37 @@ curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compos
 pushd /opt
 curl -O https://storage.googleapis.com/harbor-releases/release-1.4.0/harbor-online-installer-v1.4.0.tgz
 # Python2 required for harbor configuration
-yum install -y tar python2 python-setuptools
+yum install -y tar python2 python-setuptools bc net-tools
 tar xvf harbor-online-installer-v1.4.0.tgz
 rm harbor-online-installer-v1.4.0.tgz
 cd harbor
 
+ADDR=$(/sbin/ifconfig eno16780032 | grep 'inet' | cut -d: -f2 | awk '{print $2}')
+
+echo "[ req ]
+prompt = no
+default_bits       = 2048
+distinguished_name = req_distinguished_name
+[ req_distinguished_name ]
+C = US
+ST = Texas
+L = SanAntonio
+O = AO
+OU = Courts
+CN = ${HNAME}
+[ v3_req ]
+subjectAltName = @alt_names
+[ alt_names ]
+DNS = ${HNAME}
+IP   = ${ADDR}" > san.cnf
+
 # Create new certificates and keys for harbor https (required)
 openssl req -newkey rsa:4096 -nodes -sha256 -keyout ca.key -x509 -days 365 -out ca.crt \
-  -subj "/C=US/ST=Texas/L=SanAntonio/O=AO/CN=${HNAME}"
+  -config san.cnf -extensions v3_req
 openssl req -newkey rsa:4096 -nodes -sha256 -keyout ${HNAME}.key -out ${HNAME}.csr \
-   -subj "/C=US/ST=Texas/L=SanAntonio/O=AO/CN=${HNAME}"
-openssl x509 -req -days 365 -in ${HNAME}.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out ${HNAME}.crt
+  -config san.cnf -extensions v3_req
+openssl x509 -req -days 3650 -in ${HNAME}.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out ${HNAME}.crt -extensions v3_req -extfile san.cnf
+
 mkdir -p /data/cert
 cp ${HNAME}.crt /data/cert/
 cp ${HNAME}.key /data/cert/
@@ -71,7 +91,14 @@ sed -i "/harbor_admin_password =/c\harbor_admin_password = ${VICPASS}" harbor.cf
 
 # Change the name for the frontend harbor container
 sed -i "/container_name: nginx/c\    container_name: ${HNAME}" docker-compose.yml
-sed -i "/cpu_quota: 150000/c\    cpu_quota: 75000" docker-compose.clair.yml
+
+# Upgrade the docker-compose version
+sed -i "/version: '2'/c\version: '2.2'" docker-compose.*
+
+# Set the limit on the clairr container to 50% of current number of PROCESSORS
+processors=$(cat /proc/cpuinfo | grep processor | wc -l)
+value=$(echo "scale=3 ; $processors / 2" | bc)
+sed -i "/cpu_quota: 150000/c\    cpus: $value" docker-compose.clair.yml
 # Install harbor (this runs a python script to fill out templates and the docker-compose up on all of the container components)
 unset host
 ./install.sh --with-notary --with-clair
