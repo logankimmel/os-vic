@@ -82,7 +82,7 @@ cp ${HNAME}.crt /data/cert/
 cp ${HNAME}.key /data/cert/
 
 # Set Harbor configuration options
-sed -i "/hostname =/c\hostname = ${HNAME}" harbor.cfg
+sed -i "/hostname =/c\hostname = ${ADDR}" harbor.cfg
 sed -i '/ui_url_protocol =/c\ui_url_protocol = https' harbor.cfg
 sed -i "/ssl_cert =/c\ssl_cert = ${HNAME}.crt" harbor.cfg
 sed -i "/ssl_cert_key =/c\ssl_cert_key = ${HNAME}.key" harbor.cfg
@@ -180,7 +180,7 @@ response.raise_for_status()
 o = response.json()['documentSelfLink']
 c = {
   'hostState': {
-    'address': 'https://${HNAME}:443',
+    'address': 'https://${ADDR}:443',
     'name': 'Harbor',
     'endpointType': 'container.docker.registry',
     'authCredentialsLink': o
