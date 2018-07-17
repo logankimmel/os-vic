@@ -8,11 +8,21 @@ if [ -z $VICADMIN ]
   else
     VICADMIN=$VICADMIN
     VICPASS=$VICPASS
+    VICDOMAIN=$VICDOMAIN
+fi
+if [ -z $VICDOMAIN ]
+  then
+    echo "Using the default example.com domain"
+    VICDOMAIN="example.com"
 fi
 export TERM=xterm
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
 
-HNAME=$(hostname -f)
+hostname=$(hostname)
+HNAME="$hostname.$VICDOMAIN"
+
+# Set the HOSTNAME
+hostnamectl set-hostname $HNAME
 
 # Data directory for the docker volumes
 mkdir -p /data
@@ -82,7 +92,7 @@ cp ${HNAME}.crt /data/cert/
 cp ${HNAME}.key /data/cert/
 
 # Set Harbor configuration options
-sed -i "/hostname =/c\hostname = ${ADDR}" harbor.cfg
+sed -i "/hostname =/c\hostname = ${HNAME}" harbor.cfg
 sed -i '/ui_url_protocol =/c\ui_url_protocol = https' harbor.cfg
 sed -i "/ssl_cert =/c\ssl_cert = ${HNAME}.crt" harbor.cfg
 sed -i "/ssl_cert_key =/c\ssl_cert_key = ${HNAME}.key" harbor.cfg
@@ -180,7 +190,7 @@ response.raise_for_status()
 o = response.json()['documentSelfLink']
 c = {
   'hostState': {
-    'address': 'https://${ADDR}:443',
+    'address': 'https://${HNAME}:443',
     'name': 'Harbor',
     'endpointType': 'container.docker.registry',
     'authCredentialsLink': o
